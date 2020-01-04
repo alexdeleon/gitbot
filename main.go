@@ -68,6 +68,11 @@ func (c Config) Validate() error {
 }
 
 func main() {
+	gitCmd := "git"
+	if cmd := os.Getenv("GITBOT_GIT_COMMAND"); cmd != "" {
+		gitCmd = cmd
+	}
+
 	version := flag.Bool("version", false, "Shows version and exits")
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s [config]:\n", os.Args[0])
@@ -117,7 +122,7 @@ func main() {
 		if os.Getenv("GITBOT_LEAVE_TEMPDIRS") == "" {
 			defer os.RemoveAll(tempdir)
 		}
-		clonecmd := exec.Command("git", "clone", "--depth", "1", repo, tempdir)
+		clonecmd := exec.Command(gitCmd, "clone", "--depth", "1", repo, tempdir)
 		clonecmd.Dir = tempdir
 		clonecmd.Stdout = os.Stdout
 		clonecmd.Stderr = os.Stderr
@@ -142,14 +147,14 @@ func main() {
 
 			// commit changes
 			log.Printf("%s: committing changes", repo)
-			gitaddcmd := exec.Command("git", "add", "-A")
+			gitaddcmd := exec.Command(gitCmd, "add", "-A")
 			gitaddcmd.Dir = tempdir
 			gitaddcmd.Stdout = os.Stdout
 			gitaddcmd.Stderr = os.Stderr
 			if err := gitaddcmd.Run(); err != nil {
 				log.Fatalf("%s: error adding: %s", repo, err)
 			}
-			commitcmd := exec.Command("git", "commit", "-m", changecmdstdout.String())
+			commitcmd := exec.Command(gitCmd, "commit", "-m", changecmdstdout.String())
 			commitcmd.Dir = tempdir
 			commitcmd.Stdout = os.Stdout
 			commitcmd.Stderr = os.Stderr
